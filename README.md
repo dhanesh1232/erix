@@ -1,10 +1,9 @@
 # ⚡ ERIX — Git Automator CLI
 
 [![npm version](https://img.shields.io/npm/v/erix.svg?color=blue&style=flat-square)](https://www.npmjs.com/package/erix)
-[![npm downloads](https://img.shields.io/npm/dt/erix.svg?style=flat-square&color=brightgreen)](https://www.npmjs.com/package/erix)
 [![license](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18.0.0-blue?style=flat-square)](https://nodejs.org)
-[![Made by ECOD](https://img.shields.io/badge/made%20by-ECOD%20🔥-orange?style=flat-square)](https://github.com/ecodrix)
+[![Made by ECOD](https://img.shields.io/badge/made%20by-ECOD%20🔥-orange?style=flat-square)](https://github.com/dhanesh1232)
 
 > Because you deserve one-command perfection.  
 > Simplify your git workflow — commit, push, and sync your code with a single command.

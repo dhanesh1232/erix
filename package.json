@@ -1,25 +1,45 @@
 {
   "name": "erix",
-  "version": "1.0.0",
-  "description": "",
+  "version": "1.0.1",
+  "description": "⚡ A sleek one-command Git automation CLI that commits, pushes, and manages repos effortlessly — built for developers who value speed and style.",
   "main": "bin/erix.js",
   "bin": {
     "erix": "bin/erix.js"
   },
+  "type": "module",
+  "author": {
+    "name": "Dhanesh",
+    "email": "dhaneshreddy980@gamil.com",
+    "url": "https://github.com/dhanesh1232"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dhanesh1232/erix.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dhanesh1232/erix/issues"
+  },
+  "homepage": "https://github.com/dhanesh1232/erix#readme",
   "keywords": [
     "git",
     "cli",
     "automation",
     "commit",
     "push",
-    "nodejs"
+    "developer-tools",
+    "nodejs",
+    "productivity",
+    "open-source",
+    "github"
   ],
-  "author": "",
-  "license": "MIT",
-  "type": "module",
   "dependencies": {
     "chalk": "^5.6.2",
     "inquirer": "^12.10.0",
     "ora": "^9.0.0"
-  }
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "preferGlobal": true
 }

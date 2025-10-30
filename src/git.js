@@ -34,16 +34,32 @@ export default async function run(args) {
 
   args = Array.isArray(args) ? args : [];
 
+  // --- Parse CLI flags correctly ---
   let repo = null;
   let message = "Auto commit from ERIX 🚀";
-  const repoFlag = args.find((a) => a.startsWith("--r"));
-  const messageFlag = args.find((a) => a.startsWith("--m"));
-  let force = args.includes("--f");
+  let force = args.includes("--f") || args.includes("-f");
 
-  repo = repoFlag ? repoFlag.split(" ")[1] || repoFlag.split("=")[1] : null;
-  message = messageFlag
-    ? messageFlag.split(" ")[1] || messageFlag.split("=")[1]
-    : "Auto commit from ERIX 🚀";
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+
+    // Repo flag
+    if (arg === "--r" || arg === "-r") {
+      if (args[i + 1] && !args[i + 1].startsWith("-")) {
+        repo = args[i + 1];
+      }
+    } else if (arg.startsWith("--r=")) {
+      repo = arg.split("=")[1];
+    }
+
+    // Message flag
+    if (arg === "--m" || arg === "-m") {
+      if (args[i + 1] && !args[i + 1].startsWith("-")) {
+        message = args[i + 1];
+      }
+    } else if (arg.startsWith("--m=")) {
+      message = arg.split("=")[1];
+    }
+  }
 
   // Ask for repo if missing
   if (!repo) {

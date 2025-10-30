@@ -1,0 +1,25 @@
+{
+  "name": "erix",
+  "version": "1.0.0",
+  "description": "",
+  "main": "bin/erix.js",
+  "bin": {
+    "erix": "bin/erix.js"
+  },
+  "keywords": [
+    "git",
+    "cli",
+    "automation",
+    "commit",
+    "push",
+    "nodejs"
+  ],
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "chalk": "^5.6.2",
+    "inquirer": "^12.10.0",
+    "ora": "^9.0.0"
+  }
+}

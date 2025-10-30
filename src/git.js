@@ -57,7 +57,7 @@ const wait = (ms = 400) => new Promise((res) => setTimeout(res, ms));
 export default async function run(args) {
   await fechFunctionModules();
   console.log(chalk.bold.cyan("\n🚀 ERIX GIT AUTOMATOR v2"));
-  console.log(chalk.gray("─────────────────────────────────────────────\n"));
+  console.log(chalk.gray("─────────────────────────────────────────────"));
 
   args = Array.isArray(args) ? args : [];
 
@@ -92,7 +92,7 @@ export default async function run(args) {
       ]);
       repo = answer.repo.trim();
     } catch {
-      console.log(chalk.redBright("\n💤 Operation cancelled by user."));
+      console.log(chalk.redBright("💤 Operation cancelled by user."));
       console.log(chalk.gray("─────────────────────────────────────────────"));
       await logError("user input", "User cancelled prompt with Ctrl+C");
       process.exit(0);

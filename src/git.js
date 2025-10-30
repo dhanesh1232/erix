@@ -11,16 +11,39 @@ import path from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-let logError = async () => {};
-
-try {
-  const loggerPath = path.join(__dirname, "./utils/logger.js");
-  const loggerModule = await import(loggerPath);
-  logError = loggerModule.logError || (() => {});
-} catch (err) {
-  console.error("⚠ Failed to load logger:", err.message);
+async function loadModuleFunction({
+  modulePath,
+  functionName,
+  fallback = async () => {},
+  label = "module",
+}) {
+  try {
+    const fullPath = path.join(__dirname, modulePath);
+    const mod = await import(fullPath);
+    return mod[functionName] || fallback;
+  } catch (err) {
+    console.error(`⚠ Failed to load ${label}:`, err.message);
+    return fallback;
+  }
 }
 
+let logError = async () => {};
+let showSummary = async () => {};
+
+async function fechFunctionModules() {
+  logError = await loadModuleFunction({
+    modulePath: "./utils/logger.js",
+    functionName: "logError",
+    label: "logger",
+  });
+  showSummary = await loadModuleFunction({
+    modulePath: "./utils/summary.js",
+    functionName: "showSummary",
+    label: "summary",
+  });
+}
+
+// graceful exit
 process.on("SIGINT", () => {
   console.log(chalk.redBright("\n\n💤 Operation cancelled by user."));
   console.log(chalk.gray("─────────────────────────────────────────────"));
@@ -28,40 +51,33 @@ process.on("SIGINT", () => {
   process.exit(0);
 });
 
+// delay helper
+const wait = (ms = 400) => new Promise((res) => setTimeout(res, ms));
+
 export default async function run(args) {
+  await fechFunctionModules();
   console.log(chalk.bold.cyan("\n🚀 ERIX GIT AUTOMATOR v2"));
   console.log(chalk.gray("─────────────────────────────────────────────\n"));
 
   args = Array.isArray(args) ? args : [];
 
-  // --- Parse CLI flags correctly ---
   let repo = null;
   let message = "Auto commit from ERIX 🚀";
   let force = args.includes("--f") || args.includes("-f");
 
+  // --- Parse flags ---
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-
-    // Repo flag
     if (arg === "--r" || arg === "-r") {
-      if (args[i + 1] && !args[i + 1].startsWith("-")) {
-        repo = args[i + 1];
-      }
-    } else if (arg.startsWith("--r=")) {
-      repo = arg.split("=")[1];
-    }
+      repo = args[i + 1] && !args[i + 1].startsWith("-") ? args[i + 1] : repo;
+    } else if (arg.startsWith("--r=")) repo = arg.split("=")[1];
 
-    // Message flag
     if (arg === "--m" || arg === "-m") {
-      if (args[i + 1] && !args[i + 1].startsWith("-")) {
-        message = args[i + 1];
-      }
-    } else if (arg.startsWith("--m=")) {
-      message = arg.split("=")[1];
-    }
+      message =
+        args[i + 1] && !args[i + 1].startsWith("-") ? args[i + 1] : message;
+    } else if (arg.startsWith("--m=")) message = arg.split("=")[1];
   }
 
-  // Ask for repo if missing
   if (!repo) {
     try {
       const answer = await inquirer.prompt([
@@ -70,12 +86,12 @@ export default async function run(args) {
           name: "repo",
           message: chalk.yellow("🌐 Enter your repository URL:"),
           validate: (input) =>
-            input.startsWith("https://github.com/") ||
-            "Please enter a valid GitHub repository URL (https://github.com/...)",
+            /^https:\/\/(github|gitlab|bitbucket)\.com\/.+/.test(input) ||
+            "Enter a valid repository URL (GitHub, GitLab, or Bitbucket)",
         },
       ]);
       repo = answer.repo.trim();
-    } catch (err) {
+    } catch {
       console.log(chalk.redBright("\n💤 Operation cancelled by user."));
       console.log(chalk.gray("─────────────────────────────────────────────"));
       await logError("user input", "User cancelled prompt with Ctrl+C");
@@ -84,59 +100,83 @@ export default async function run(args) {
   }
 
   const gitPath = path.join(process.cwd(), ".git");
-  const spinner = ora("🔍 Checking git status...").start();
+  const spinner = ora("🔍 Checking repository...").start();
 
   try {
-    // Detect or re-init
+    // check/init repo
+    await wait();
     if (!fs.existsSync(gitPath)) {
       spinner.text = "Initializing new repository...";
+      await wait();
       execSync("git init", { stdio: "ignore" });
+      spinner.succeed(chalk.green("Repository initialized successfully."));
+    } else {
+      spinner.succeed(chalk.green("Repository already initialized."));
     }
 
-    // Detect branch
+    // branch detection
+    spinner.start("Detecting branch...");
+    await wait();
     let branch = "main";
     try {
       branch = execSync("git rev-parse --abbrev-ref HEAD").toString().trim();
       if (branch === "HEAD") branch = "main";
+      spinner.succeed(chalk.green(`Branch '${branch}' detected successfully.`));
     } catch {
-      spinner.text = "No branch detected. Creating main...";
+      spinner.text = "Creating main branch...";
+      await wait();
       execSync("git checkout -b main", { stdio: "ignore" });
+      spinner.succeed(chalk.green("Main branch created successfully."));
     }
 
-    // Add & commit
-    spinner.text = "Adding files...";
+    // add files
+    spinner.start("Adding files...");
+    await wait();
     execSync("git add .", { stdio: "ignore" });
+    spinner.succeed(chalk.green("Files added successfully."));
 
+    // commit
+    spinner.start("Committing changes...");
+    await wait();
     try {
-      spinner.text = "Committing changes...";
       execSync(`git commit -m "${message}"`, { stdio: "ignore" });
+      spinner.succeed(chalk.green("Changes committed successfully."));
     } catch {
-      spinner.text = "No new changes detected...";
+      spinner.info(chalk.gray("No new changes detected; commit skipped."));
     }
 
-    // Remote
+    // remote handling
+    spinner.start("Checking remote origin...");
+    await wait();
     let remoteUrl = "";
     try {
       remoteUrl = execSync("git remote get-url origin").toString().trim();
-
       if (remoteUrl !== repo) {
         spinner.text = "Updating remote origin...";
+        await wait();
         execSync("git remote remove origin", { stdio: "ignore" });
         execSync(`git remote add origin ${repo}`, { stdio: "ignore" });
         remoteUrl = repo;
+        spinner.succeed(chalk.green("Remote origin updated successfully."));
+      } else {
+        spinner.succeed(chalk.green("Remote origin verified successfully."));
       }
     } catch {
-      spinner.text = "Setting remote origin...";
+      spinner.text = "Setting new remote origin...";
+      await wait();
       execSync(`git remote add origin ${repo}`, { stdio: "ignore" });
       remoteUrl = repo;
+      spinner.succeed(chalk.green("Remote origin set successfully."));
     }
 
-    spinner.text = `Pushing to ${branch}...`;
+    // push
+    spinner.start(`Pushing to ${branch}...`);
+    await wait(800);
     try {
       execSync(`git push origin ${branch}${force ? " --force" : ""}`, {
         stdio: "ignore",
       });
-      spinner.succeed(chalk.green("✅ Code pushed successfully!"));
+      spinner.succeed(chalk.green("Code pushed successfully!"));
       showSummary(remoteUrl, branch, message);
     } catch (err) {
       spinner.fail(chalk.red("Push failed."));
@@ -148,39 +188,31 @@ export default async function run(args) {
     await logError("git command", err);
   }
 
-  console.log(chalk.gray("\n─────────────────────────────────────────────"));
   console.log(
     chalk.bold.cyan("✨ ERIX — Because you deserve one-command perfection.\n")
   );
 }
 
+// --- Recovery Logic ---
 async function tryRecovery(remoteUrl, branch, force, spinner) {
   try {
     spinner.text = "Fetching and rebasing...";
+    await wait(500);
     execSync("git fetch origin", { stdio: "ignore" });
     execSync(`git pull origin ${branch} --rebase`, { stdio: "ignore" });
 
     spinner.text = "Retrying push...";
+    await wait(600);
     execSync(`git push origin ${branch}${force ? " --force" : ""}`, {
       stdio: "ignore",
     });
 
-    spinner.succeed(chalk.green("✅ Rebase successful! Push complete."));
+    spinner.succeed(chalk.green("Rebase successful! Push complete."));
     showSummary(remoteUrl, branch);
     return;
   } catch (err) {
     spinner.warn(chalk.yellow("⚠ Could not auto-resolve conflicts."));
-    await logError("git rebase conflict", "Could not auto-resolve conflicts.");
-  }
-
-  // --- Detect default remote branch dynamically
-  let remoteDefaultBranch = "main";
-  try {
-    const remoteInfo = execSync("git remote show origin").toString();
-    const match = remoteInfo.match(/HEAD branch:\s+(\S+)/);
-    if (match && match[1]) remoteDefaultBranch = match[1];
-  } catch {
-    // fallback
+    await logError("git rebase conflict", err);
   }
 
   const answer = await inquirer.prompt([
@@ -188,7 +220,7 @@ async function tryRecovery(remoteUrl, branch, force, spinner) {
       type: "confirm",
       name: "confirmForce",
       message: chalk.yellow(
-        "Would you like to force push? (⚠️ This will overwrite remote history)"
+        "Would you like to force push? (⚠️ Overwrites remote history)"
       ),
       default: false,
     },
@@ -202,75 +234,15 @@ async function tryRecovery(remoteUrl, branch, force, spinner) {
   }
 
   const forceSpinner = ora("🚀 Forcing push...").start();
-
+  await wait(500);
   try {
-    // Try regular force push
     execSync(`git push origin ${branch} --force`, { stdio: "ignore" });
-    forceSpinner.succeed(chalk.green("✅ Forced push successful."));
+    forceSpinner.succeed(chalk.green("Forced push successful."));
     showSummary(remoteUrl, branch);
-  } catch (err1) {
-    // Try with -u
-    forceSpinner.text = "Setting upstream and retrying...";
-    try {
-      execSync(`git push -u origin ${branch} --force`, { stdio: "ignore" });
-      forceSpinner.succeed(
-        chalk.green("✅ Forced push successful (upstream set).")
-      );
-      showSummary(remoteUrl, branch);
-    } catch (err2) {
-      // Try with HEAD mapping
-      forceSpinner.text = "Retrying with HEAD mapping...";
-      try {
-        execSync(`git push origin HEAD:${remoteDefaultBranch} --force`, {
-          stdio: "ignore",
-        });
-        forceSpinner.succeed(
-          chalk.green(`✅ Forced push to ${remoteDefaultBranch} successful.`)
-        );
-        showSummary(remoteUrl, remoteDefaultBranch);
-      } catch (err3) {
-        forceSpinner.fail(chalk.red("❌ Force push failed again."));
-        await logError("git force push", err3);
-        if (
-          err3.message.includes("authentication") ||
-          err3.message.includes("Permission denied")
-        ) {
-          await logError("git authentication", err3);
-          console.log(
-            chalk.redBright(
-              "\n🔒 Authentication error — please login to GitHub first:\n"
-            )
-          );
-          console.log(
-            chalk.white("git config --global credential.helper store")
-          );
-          console.log(
-            chalk.white(
-              "git pull or git push manually once to save credentials.\n"
-            )
-          );
-        }
-
-        console.log(chalk.yellow("\nManual recovery:"));
-        console.log(chalk.white(`git push -u origin ${branch} --force`));
-        console.log(chalk.white(`or`));
-        console.log(
-          chalk.white(`git push origin HEAD:${remoteDefaultBranch} --force`)
-        );
-      }
-    }
+  } catch (err3) {
+    forceSpinner.fail(chalk.red("❌ Force push failed."));
+    await logError("git force push", err3);
+    console.log(chalk.yellow("\nManual recovery:"));
+    console.log(chalk.white(`git push -u origin ${branch} --force`));
   }
-}
-
-function showSummary(remoteUrl, branch, message = "") {
-  console.log(chalk.greenBright("\n💫 Summary"));
-  console.log(chalk.gray("─────────────────────────────"));
-  console.log(chalk.cyan(`📦 Repo:`), chalk.white(remoteUrl));
-  console.log(chalk.cyan(`🌿 Branch:`), chalk.white(branch));
-  console.log(
-    chalk.cyan(`📝 Commit:`),
-    chalk.white(message || "No commit message")
-  );
-  console.log(chalk.cyan(`⏰ Time:`), chalk.white(new Date().toLocaleString()));
-  console.log(chalk.gray("─────────────────────────────\n"));
 }

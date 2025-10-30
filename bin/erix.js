@@ -18,7 +18,7 @@ const __dirname = path.dirname(__filename);
 
     // ✅ Version flag
     if (["-v", "--version"].includes(command)) {
-      console.log(chalk.cyan.bold(`${name} v${version}`));
+      console.log(`${chalk.cyan.bold(name)} ${chalk.red.bold(`v${version}`)}`);
       process.exit(0);
     }
 

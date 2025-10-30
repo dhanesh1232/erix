@@ -145,7 +145,7 @@ Or just follow the suggestions printed in the terminal.
 Clone the project and run locally:
 
 ```bash
-git clone https://github.com/yourname/erix.git
+git clone https://github.com/yourname/erix-git-cli-automate.git
 cd erix
 npm install
 npm link   # Register globally for dev testing

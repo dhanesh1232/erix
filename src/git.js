@@ -5,7 +5,21 @@ import inquirer from "inquirer";
 import chalk from "chalk";
 import ora from "ora";
 import fs from "fs";
+import { fileURLToPath } from "url";
 import path from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+let logError = async () => {};
+
+try {
+  const loggerPath = path.join(__dirname, "./utils/logger.js");
+  const loggerModule = await import(loggerPath);
+  logError = loggerModule.logError || (() => {});
+} catch (err) {
+  console.error("⚠ Failed to load logger:", err.message);
+}
 
 process.on("SIGINT", () => {
   console.log(chalk.redBright("\n\n💤 Operation cancelled by user."));
@@ -48,6 +62,7 @@ export default async function run(args) {
     } catch (err) {
       console.log(chalk.redBright("\n💤 Operation cancelled by user."));
       console.log(chalk.gray("─────────────────────────────────────────────"));
+      await logError("user input", "User cancelled prompt with Ctrl+C");
       process.exit(0);
     }
   }
@@ -114,6 +129,7 @@ export default async function run(args) {
   } catch (err) {
     spinner.fail(chalk.red("💥 Unexpected error occurred."));
     console.error(chalk.redBright(err.message));
+    await logError("git command", err);
   }
 
   console.log(chalk.gray("\n─────────────────────────────────────────────"));
@@ -138,6 +154,7 @@ async function tryRecovery(remoteUrl, branch, force, spinner) {
     return;
   } catch (err) {
     spinner.warn(chalk.yellow("⚠ Could not auto-resolve conflicts."));
+    await logError("git rebase conflict", "Could not auto-resolve conflicts.");
   }
 
   // --- Detect default remote branch dynamically
@@ -197,11 +214,12 @@ async function tryRecovery(remoteUrl, branch, force, spinner) {
         showSummary(remoteUrl, remoteDefaultBranch);
       } catch (err3) {
         forceSpinner.fail(chalk.red("❌ Force push failed again."));
-
+        await logError("git force push", err3);
         if (
           err3.message.includes("authentication") ||
           err3.message.includes("Permission denied")
         ) {
+          await logError("git authentication", err3);
           console.log(
             chalk.redBright(
               "\n🔒 Authentication error — please login to GitHub first:\n"

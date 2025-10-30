@@ -21,7 +21,6 @@ if (!command || ["help", "--help", "-h"].includes(command)) {
     .finally(() => {
       process.exit(0);
     });
-  // ❌ Remove the early `process.exit(0)` here
 } else {
   switch (command) {
     case "git":

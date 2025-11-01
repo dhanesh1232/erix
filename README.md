@@ -40,7 +40,6 @@ It’s built for **speed, simplicity, and sanity**.
 npm install -g erix
 ```
 
-````
 
 Then run from anywhere:
 
@@ -60,7 +59,6 @@ erix git --r https://github.com/yourname/project.git --m "Initial setup"
 erix git --r https://github.com/ecodrix/erix-cli-demo.git --m "Deploy update"
 ```
 
----
 
 ### 🔹 Option 2 — Temporary Use (No Install)
 

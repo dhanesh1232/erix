@@ -110,6 +110,7 @@ Output sample:
 https://github.com/yourname/project.git
 ✅ Code pushed successfully!
 
+
 💫 Summary
 ─────────────────────────────
 📦 Repo: https://github.com/yourname/project.git
@@ -119,9 +120,6 @@ https://github.com/yourname/project.git
 ─────────────────────────────
 ✨ ERIX — Because you deserve one-command perfection.
 
-````
-
----
 
 ## 🧱 Manual Recovery (if needed)
 
@@ -133,8 +131,6 @@ git push origin main --force
 ```
 
 Or follow its intelligent on-screen suggestions.
-
----
 
 ## 🧩 Tech Stack
 

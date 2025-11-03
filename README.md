@@ -101,15 +101,49 @@ erix git
 4. Push automatically
 5. Handle conflicts with grace
 
-Output sample:
+### Sample:
+#### Use Case - 1
+```bash
+npx erix --r https://github.com/yourname/project.git
+# or
+npx erix -r https://github.com/yourname/project.git
+```
+### Output
+```bash
+🚀 ERIX GIT AUTOMATOR v2
+─────────────────────────────────────────────
+✔ Repository initialized successfully.
+✔ Main branch created successfully.
+✔ Files added successfully.
+✔ Changes committed successfully.
+✔ Remote origin set successfully.
+✔ Code pushed successfully!
 
+✔ Git Automator Summary
+─────────────────────────────
+📦 Repo: https://github.com/yourname/project.git
+🌿 Branch: main
+📝 Commit: Auto commit from ERIX 🚀
+⏰ Time: 11/3/2025, 8:12:26 PM
+⚠️  Tip: Double-check your repository on GitHub to confirm your latest push is visible!
+─────────────────────────────
+✨ ERIX — Because you deserve one-command perfection.
+```
+#### Use Case - 2
+```bash
+npx erix git
+```
+#### Output
+```bash
 🚀 ERIX GIT AUTOMATOR v2
 ─────────────────────────────
-
-✔ 🌐 Enter your repository URL:
-https://github.com/yourname/project.git
-✅ Code pushed successfully!
-
+✔ 🌐 Enter your repository URL:https://github.com/yourname/project.git
+✔ Repository initialized successfully.
+✔ Main branch created successfully.
+✔ Files added successfully.
+✔ Changes committed successfully.
+✔ Remote origin verified successfully.
+✔ Code pushed successfully!
 
 💫 Summary
 ─────────────────────────────
@@ -117,9 +151,10 @@ https://github.com/yourname/project.git
 🌿 Branch: main
 📝 Commit: Auto commit from ERIX 🚀
 ⏰ Time: 10/30/2025, 5:02:05 AM
+⚠️  Tip: Double-check your repository on GitHub to confirm your latest push is visible!
 ─────────────────────────────
 ✨ ERIX — Because you deserve one-command perfection.
-
+```
 
 ## 🧱 Manual Recovery (if needed)
 
@@ -201,7 +236,3 @@ Use freely, automate boldly.
 💭 **Next step:**
 Want me to make a **`README_HEADER.svg` banner** (a visual header image with your logo, name, and tagline — like “ERIX ⚡ Git Automator CLI — One Command. Infinite Power.”)?
 That’ll make your GitHub page look _premium_ and visually branded.
-
-```
-
-```

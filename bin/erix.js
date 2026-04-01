@@ -51,6 +51,51 @@ const __dirname = path.dirname(__filename);
         }
         break;
 
+      case "search":
+        try {
+          const m = await import(path.join(__dirname, "../src/search.js"));
+          if (m.run) await m.run(args);
+        } catch (err) {
+          console.error(chalk.red("❌ Search failed:"), err.message);
+        }
+        break;
+
+      case "edit":
+        try {
+          const m = await import(path.join(__dirname, "../src/edit.js"));
+          if (m.run) await m.run(args);
+        } catch (err) {
+          console.error(chalk.red("❌ Edit failed:"), err.message);
+        }
+        break;
+
+      case "sc":
+        try {
+          const m = await import(path.join(__dirname, "../src/sc.js"));
+          if (m.run) await m.run(args);
+        } catch (err) {
+          console.error(chalk.red("❌ Smart Commit failed:"), err.message);
+        }
+        break;
+
+      case "doctor":
+        try {
+          const { doctor } = await import(path.join(__dirname, "../src/doctor.js"));
+          await doctor();
+        } catch (err) {
+          console.error(chalk.red("❌ Doctor failed:"), err.message);
+        }
+        break;
+
+      case "run":
+        try {
+          const { run } = await import(path.join(__dirname, "../src/bash.js"));
+          await run(args);
+        } catch (err) {
+          console.error(chalk.red("❌ Run failed:"), err.message);
+        }
+        break;
+
       default:
         console.log(chalk.red(`❌ Unknown command: ${command}`));
         console.log(chalk.gray("Use: npx erix help\n"));

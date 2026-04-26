@@ -121,47 +121,69 @@ export default async function run(args) {
     }
 
     if (createNew) {
+      const folderName = path.basename(process.cwd());
+
+      const { repoName, isPrivate } = await inquirer.prompt([
+        {
+          type: "input",
+          name: "repoName",
+          message: "Repository Name:",
+          default: folderName,
+          validate: (input) =>
+            input.trim().length > 0 || "Repository name cannot be empty.",
+        },
+        {
+          type: "confirm",
+          name: "isPrivate",
+          message: "Should this repository be private?",
+          default: false,
+        },
+      ]);
+
+      const createSpinner = ora("Creating GitHub repository...").start();
+
+      let usedGhCli = false;
       try {
-        const { getOctokit } = await import("./github/auth.js");
-        const octokit = getOctokit();
-        const folderName = path.basename(process.cwd());
-
-        const { repoName, isPrivate } = await inquirer.prompt([
-          {
-            type: "input",
-            name: "repoName",
-            message: "Repository Name:",
-            default: folderName,
-            validate: (input) =>
-              input.trim().length > 0 || "Repository name cannot be empty.",
-          },
-          {
-            type: "confirm",
-            name: "isPrivate",
-            message: "Should this repository be private?",
-            default: false,
-          },
-        ]);
-
-        const createSpinner = ora("Creating GitHub repository...").start();
-        const response = await octokit.rest.repos.createForAuthenticatedUser({
-          name: repoName.trim(),
-          private: isPrivate,
-        });
+        // Try GitHub CLI first
+        execSync("gh auth status", { stdio: "ignore" });
+        const visibilityFlag = isPrivate ? "--private" : "--public";
+        
+        execSync(`gh repo create ${repoName.trim()} ${visibilityFlag}`, { stdio: "ignore" });
+        const repoUrl = execSync(`gh repo view ${repoName.trim()} --json url --jq ".url"`).toString().trim();
+        
+        repo = repoUrl + ".git";
         createSpinner.succeed(
-          chalk.green(`GitHub repository created: ${response.data.html_url}`),
+          chalk.green(`GitHub repository created via GitHub CLI: ${repoUrl}`),
         );
-        repo = response.data.clone_url;
-      } catch (err) {
-        console.error(chalk.red("❌ Failed to create GitHub repository."));
-        if (err.message.includes("Not authenticated")) {
-          console.log(
-            chalk.yellow("Please run 'erix login' first to authenticate."),
+        usedGhCli = true;
+      } catch (ghErr) {
+        usedGhCli = false;
+      }
+
+      if (!usedGhCli) {
+        try {
+          const { getOctokit } = await import("./github/auth.js");
+          const octokit = getOctokit();
+
+          const response = await octokit.rest.repos.createForAuthenticatedUser({
+            name: repoName.trim(),
+            private: isPrivate,
+          });
+          createSpinner.succeed(
+            chalk.green(`GitHub repository created: ${response.data.html_url}`),
           );
-        } else {
-          console.error(chalk.redBright(err.message));
+          repo = response.data.clone_url;
+        } catch (err) {
+          createSpinner.fail(chalk.red("Failed to create GitHub repository."));
+          if (err.message && err.message.includes("Not authenticated")) {
+            console.log(
+              chalk.yellow("\nPlease run 'erix login' first to authenticate, or install GitHub CLI ('gh')."),
+            );
+          } else {
+            console.error(chalk.redBright(err.message || "Unknown error"));
+          }
+          process.exit(1);
         }
-        process.exit(1);
       }
     }
   }

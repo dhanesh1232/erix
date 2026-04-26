@@ -79,23 +79,90 @@ export default async function run(args) {
   }
 
   if (!repo) {
+    let createNew = false;
     try {
       const answer = await inquirer.prompt([
         {
-          type: "input",
-          name: "repo",
-          message: chalk.yellow("🌐 Enter your repository URL:"),
-          validate: (input) =>
-            /^https:\/\/(github|gitlab|bitbucket)\.com\/.+/.test(input) ||
-            "Enter a valid repository URL (GitHub, GitLab, or Bitbucket)",
+          type: "list",
+          name: "action",
+          message: chalk.yellow(
+            "🌐 No remote repository detected. What would you like to do?",
+          ),
+          choices: [
+            { name: "Enter an existing repository URL", value: "enter" },
+            {
+              name: "Create a new GitHub repository automatically",
+              value: "create",
+            },
+          ],
         },
       ]);
-      repo = answer.repo.trim();
+
+      if (answer.action === "enter") {
+        const urlAnswer = await inquirer.prompt([
+          {
+            type: "input",
+            name: "repo",
+            message: chalk.yellow("🌐 Enter your repository URL:"),
+            validate: (input) =>
+              /^https:\/\/(github|gitlab|bitbucket)\.com\/.+/.test(input) ||
+              "Enter a valid repository URL (GitHub, GitLab, or Bitbucket)",
+          },
+        ]);
+        repo = urlAnswer.repo.trim();
+      } else {
+        createNew = true;
+      }
     } catch {
       console.log(chalk.redBright("💤 Operation cancelled by user."));
       console.log(chalk.gray("─────────────────────────────────────────────"));
       await logError("user input", "User cancelled prompt with Ctrl+C");
       process.exit(0);
+    }
+
+    if (createNew) {
+      try {
+        const { getOctokit } = await import("./github/auth.js");
+        const octokit = getOctokit();
+        const folderName = path.basename(process.cwd());
+
+        const { repoName, isPrivate } = await inquirer.prompt([
+          {
+            type: "input",
+            name: "repoName",
+            message: "Repository Name:",
+            default: folderName,
+            validate: (input) =>
+              input.trim().length > 0 || "Repository name cannot be empty.",
+          },
+          {
+            type: "confirm",
+            name: "isPrivate",
+            message: "Should this repository be private?",
+            default: false,
+          },
+        ]);
+
+        const createSpinner = ora("Creating GitHub repository...").start();
+        const response = await octokit.rest.repos.createForAuthenticatedUser({
+          name: repoName.trim(),
+          private: isPrivate,
+        });
+        createSpinner.succeed(
+          chalk.green(`GitHub repository created: ${response.data.html_url}`),
+        );
+        repo = response.data.clone_url;
+      } catch (err) {
+        console.error(chalk.red("❌ Failed to create GitHub repository."));
+        if (err.message.includes("Not authenticated")) {
+          console.log(
+            chalk.yellow("Please run 'erix login' first to authenticate."),
+          );
+        } else {
+          console.error(chalk.redBright(err.message));
+        }
+        process.exit(1);
+      }
     }
   }
 
@@ -189,7 +256,7 @@ export default async function run(args) {
   }
 
   console.log(
-    chalk.bold.cyan("✨ ERIX — Because you deserve one-command perfection.\n")
+    chalk.bold.cyan("✨ ERIX — Because you deserve one-command perfection.\n"),
   );
 }
 
@@ -220,7 +287,7 @@ async function tryRecovery(remoteUrl, branch, force, spinner) {
       type: "confirm",
       name: "confirmForce",
       message: chalk.yellow(
-        "Would you like to force push? (⚠️ Overwrites remote history)"
+        "Would you like to force push? (⚠️ Overwrites remote history)",
       ),
       default: false,
     },

@@ -46,7 +46,7 @@ const __dirname = path.dirname(__filename);
         } catch (err) {
           console.error(
             chalk.red("❌ Failed to load git module:"),
-            err.message
+            err.message,
           );
         }
         break;
@@ -80,7 +80,9 @@ const __dirname = path.dirname(__filename);
 
       case "doctor":
         try {
-          const { doctor } = await import(path.join(__dirname, "../src/doctor.js"));
+          const { doctor } = await import(
+            path.join(__dirname, "../src/doctor.js")
+          );
           await doctor();
         } catch (err) {
           console.error(chalk.red("❌ Doctor failed:"), err.message);
@@ -93,6 +95,41 @@ const __dirname = path.dirname(__filename);
           await run(args);
         } catch (err) {
           console.error(chalk.red("❌ Run failed:"), err.message);
+        }
+        break;
+
+      case "login":
+      case "auth":
+        try {
+          const { login } = await import(
+            path.join(__dirname, "../src/github/auth.js")
+          );
+          await login();
+        } catch (err) {
+          console.error(chalk.red("❌ Login failed:"), err.message);
+        }
+        break;
+
+      case "pr":
+        try {
+          const { createPR } = await import(
+            path.join(__dirname, "../src/github/pr.js")
+          );
+          await createPR();
+        } catch (err) {
+          console.error(chalk.red("❌ PR creation failed:"), err.message);
+        }
+        break;
+
+      case "issues":
+      case "issue":
+        try {
+          const { manageIssues } = await import(
+            path.join(__dirname, "../src/github/issues.js")
+          );
+          await manageIssues();
+        } catch (err) {
+          console.error(chalk.red("❌ Issues manager failed:"), err.message);
         }
         break;
 
